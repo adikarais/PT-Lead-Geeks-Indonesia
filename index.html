@@ -98,7 +98,7 @@
           </div>
           <div class="mb-4 flex gap-4">
             <div class="w-1/2">
-              <label class="block text-gray-700 text-sm font-bold mb-2">Biaya/Bulan ($)</label>
+              <label class="block text-gray-700 text-sm font-bold mb-2">Biaya/Bulan (Rp)</label>
               <input type="number" id="sub-cost" step="0.01" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required />
             </div>
             <div class="w-1/2">
@@ -124,8 +124,8 @@
       // --- 1. DATA & INISIALISASI ---
       // Mengambil data dari localStorage. Jika kosong, gunakan data contoh awal.
       let subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [
-        { id: 1718000000000, name: 'Zoom Pro', dept: 'HR & Operasional', date: '2026-06-25', cost: 14.99, status: 'Aktif' },
-        { id: 1718000000001, name: 'Adobe Creative Cloud', dept: 'Marketing', date: '2026-06-10', cost: 54.99, status: 'Segera Berakhir' },
+        { id: 1718000000000, name: 'Zoom Pro', dept: 'HR & Operasional', date: '2026-09-25', cost: 14000.0, status: 'Aktif' },
+        { id: 1718000000001, name: 'Adobe Creative Cloud', dept: 'Marketing', date: '2026-06-10', cost: 54000.0, status: 'Segera Berakhir' },
       ];
 
       // --- 2. ELEMEN DOM ---
@@ -227,7 +227,9 @@
                     <td class="py-3 px-6 text-left whitespace-nowrap font-medium">${sub.name}</td>
                     <td class="py-3 px-6 text-left">${sub.dept}</td>
                     <td class="py-3 px-6 text-left">${formatDate(sub.date)}</td>
-                    <td class="py-3 px-6 text-left">$${parseFloat(sub.cost).toFixed(2)}</td>
+                    <td class="py-3 px-6 text-left">Rp. ${parseFloat(sub.cost)
+                      .toFixed(0)
+                      .replace(/\B(?=(\d{3})+(?!\d))/g, '.')}</td>
                     <td class="py-3 px-6 text-center">
                         <span class="py-1 px-3 rounded-full text-xs font-semibold ${getStatusColor(sub.status)}">${sub.status}</span>
                     </td>
