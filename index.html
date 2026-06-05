@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pelacak Langganan & Perpanjangan Alat</title>
+    <!-- Menambahkan Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Konfigurasi warna kustom Tailwind (Opsional, untuk membuat tampilan lebih rapi) -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#3b82f6', // Biru
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="bg-gray-100 font-sans text-gray-800 p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Header -->
+      <header class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Manajemen Langganan Software</h1>
+        <p class="text-gray-500 mt-1">Lacak dan kelola semua langganan alat atau perangkat lunak perusahaan.</p>
+      </header>
+
+      <!-- Bagian Ringkasan (Dashboard) -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white rounded-lg shadow p-5 border-l-4 border-blue-500">
+          <h3 class="text-gray-500 text-sm font-semibold">Total Langganan</h3>
+          <p class="text-2xl font-bold mt-1" id="total-count">0</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-5 border-l-4 border-green-500">
+          <h3 class="text-gray-500 text-sm font-semibold">Aktif</h3>
+          <p class="text-2xl font-bold mt-1 text-green-600" id="active-count">0</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-5 border-l-4 border-yellow-500">
+          <h3 class="text-gray-500 text-sm font-semibold">Segera Berakhir</h3>
+          <p class="text-2xl font-bold mt-1 text-yellow-600" id="expiring-count">0</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-5 border-l-4 border-red-500">
+          <h3 class="text-gray-500 text-sm font-semibold">Kadaluarsa / Batal</h3>
+          <p class="text-2xl font-bold mt-1 text-red-600" id="expired-count">0</p>
+        </div>
+      </div>
+
+      <!-- Area Aksi Utama -->
+      <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+        <div class="w-full md:w-1/3">
+          <input type="text" id="search-input" placeholder="Cari nama aplikasi..." class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div class="flex flex-col md:flex-row w-full md:w-auto gap-2">
+          <button id="btn-export" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition duration-200">Unduh CSV</button>
+          <button id="btn-add" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition duration-200">+ Tambah Langganan Baru</button>
+        </div>
+      </div>
+
+      <!-- Area Tabel/Daftar -->
+      <div class="bg-white rounded-lg shadow overflow-x-auto">
+        <table class="min-w-full leading-normal">
+          <thead>
+            <tr class="bg-gray-50 text-gray-600 uppercase text-xs leading-normal">
+              <th class="py-3 px-6 text-left border-b border-gray-200">Nama Aplikasi</th>
+              <th class="py-3 px-6 text-left border-b border-gray-200">Departemen</th>
+              <th class="py-3 px-6 text-left border-b border-gray-200">Tgl. Perpanjangan</th>
+              <th class="py-3 px-6 text-left border-b border-gray-200">Biaya / Bln</th>
+              <th class="py-3 px-6 text-center border-b border-gray-200">Status</th>
+              <th class="py-3 px-6 text-center border-b border-gray-200">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="text-gray-600 text-sm" id="table-body">
+            <!-- Data akan dirender oleh JavaScript di sini -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Area Form (Modal/Dialog) - Disembunyikan secara default menggunakan class "hidden" -->
+    <div id="modal-form" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
+      <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800" id="modal-title">Tambah Langganan</h2>
+        <form id="subscription-form">
+          <input type="hidden" id="sub-id" />
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Nama Alat/Aplikasi</label>
+            <input type="text" id="sub-name" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required />
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Departemen Pemilik</label>
+            <input type="text" id="sub-dept" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required />
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Tanggal Perpanjangan</label>
+            <input type="date" id="sub-date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required />
+          </div>
+          <div class="mb-4 flex gap-4">
+            <div class="w-1/2">
+              <label class="block text-gray-700 text-sm font-bold mb-2">Biaya/Bulan ($)</label>
+              <input type="number" id="sub-cost" step="0.01" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required />
+            </div>
+            <div class="w-1/2">
+              <label class="block text-gray-700 text-sm font-bold mb-2">Status</label>
+              <select id="sub-status" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                <option value="Aktif">Aktif</option>
+                <option value="Segera Berakhir">Segera Berakhir</option>
+                <option value="Kadaluarsa">Kadaluarsa</option>
+                <option value="Dibatalkan">Dibatalkan</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex justify-end mt-6 gap-3">
+            <button type="button" id="btn-cancel" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Batal</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Script JavaScript untuk Fungsionalitas -->
+    <script>
+      // --- 1. DATA & INISIALISASI ---
+      // Mengambil data dari localStorage. Jika kosong, gunakan data contoh awal.
+      let subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [
+        { id: 1718000000000, name: 'Zoom Pro', dept: 'HR & Operasional', date: '2026-06-25', cost: 14.99, status: 'Aktif' },
+        { id: 1718000000001, name: 'Adobe Creative Cloud', dept: 'Marketing', date: '2026-06-10', cost: 54.99, status: 'Segera Berakhir' },
+      ];
+
+      // --- 2. ELEMEN DOM ---
+      const tableBody = document.getElementById('table-body');
+      const modalForm = document.getElementById('modal-form');
+      const subscriptionForm = document.getElementById('subscription-form');
+      const btnAdd = document.getElementById('btn-add');
+      const btnCancel = document.getElementById('btn-cancel');
+      const btnExport = document.getElementById('btn-export');
+      const searchInput = document.getElementById('search-input');
+      const modalTitle = document.getElementById('modal-title');
+
+      // Input Form
+      const inputId = document.getElementById('sub-id');
+      const inputName = document.getElementById('sub-name');
+      const inputDept = document.getElementById('sub-dept');
+      const inputDate = document.getElementById('sub-date');
+      const inputCost = document.getElementById('sub-cost');
+      const inputStatus = document.getElementById('sub-status');
+
+      // Kartu Ringkasan
+      const countTotal = document.getElementById('total-count');
+      const countActive = document.getElementById('active-count');
+      const countExpiring = document.getElementById('expiring-count');
+      const countExpired = document.getElementById('expired-count');
+
+      // --- 3. FUNGSI UTILITAS ---
+      function saveData() {
+        localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+      }
+
+      function formatDate(dateString) {
+        const options = { day: 'numeric', month: 'short', year: 'numeric' };
+        return new Date(dateString).toLocaleDateString('id-ID', options);
+      }
+
+      function getStatusColor(status) {
+        switch (status) {
+          case 'Aktif':
+            return 'bg-green-100 text-green-800';
+          case 'Segera Berakhir':
+            return 'bg-yellow-100 text-yellow-800';
+          case 'Kadaluarsa':
+            return 'bg-red-100 text-red-800';
+          case 'Dibatalkan':
+            return 'bg-gray-100 text-gray-800';
+          default:
+            return 'bg-gray-100 text-gray-800';
+        }
+      }
+
+      // --- FITUR BONUS: CEK STATUS OTOMATIS ---
+      function checkExpiringSubscriptions() {
+        const today = new Date();
+        let hasChanges = false;
+
+        subscriptions.forEach((sub) => {
+          if (sub.status === 'Aktif' || sub.status === 'Segera Berakhir') {
+            const renewalDate = new Date(sub.date);
+            // Hitung selisih waktu dalam hari
+            const timeDiff = renewalDate.getTime() - today.getTime();
+            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+            if (daysDiff < 0 && sub.status !== 'Kadaluarsa') {
+              sub.status = 'Kadaluarsa';
+              hasChanges = true;
+            } else if (daysDiff >= 0 && daysDiff <= 30 && sub.status !== 'Segera Berakhir') {
+              sub.status = 'Segera Berakhir';
+              hasChanges = true;
+            }
+          }
+        });
+
+        if (hasChanges) {
+          saveData(); // Simpan perubahan status ke Local Storage
+        }
+      }
+
+      // --- 4. FUNGSI RENDER TAMPILAN ---
+      function updateDashboard() {
+        countTotal.innerText = subscriptions.length;
+        countActive.innerText = subscriptions.filter((s) => s.status === 'Aktif').length;
+        countExpiring.innerText = subscriptions.filter((s) => s.status === 'Segera Berakhir').length;
+        countExpired.innerText = subscriptions.filter((s) => s.status === 'Kadaluarsa' || s.status === 'Dibatalkan').length;
+      }
+
+      function renderTable(dataToRender = subscriptions) {
+        tableBody.innerHTML = ''; // Kosongkan tabel
+
+        if (dataToRender.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-gray-500">Tidak ada data ditemukan.</td></tr>';
+          return;
+        }
+
+        dataToRender.forEach((sub) => {
+          const tr = document.createElement('tr');
+          tr.className = 'border-b border-gray-200 hover:bg-gray-50';
+          tr.innerHTML = `
+                    <td class="py-3 px-6 text-left whitespace-nowrap font-medium">${sub.name}</td>
+                    <td class="py-3 px-6 text-left">${sub.dept}</td>
+                    <td class="py-3 px-6 text-left">${formatDate(sub.date)}</td>
+                    <td class="py-3 px-6 text-left">$${parseFloat(sub.cost).toFixed(2)}</td>
+                    <td class="py-3 px-6 text-center">
+                        <span class="py-1 px-3 rounded-full text-xs font-semibold ${getStatusColor(sub.status)}">${sub.status}</span>
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                        <button onclick="editSubscription(${sub.id})" class="text-blue-500 hover:text-blue-700 mx-1 font-medium">Edit</button>
+                        <button onclick="deleteSubscription(${sub.id})" class="text-red-500 hover:text-red-700 mx-1 font-medium">Hapus</button>
+                    </td>
+                `;
+          tableBody.appendChild(tr);
+        });
+      }
+
+      // --- 5. MANAJEMEN MODAL & FORM ---
+      function openModal(isEdit = false) {
+        modalForm.classList.remove('hidden');
+        if (!isEdit) {
+          modalTitle.innerText = 'Tambah Langganan Baru';
+          subscriptionForm.reset();
+          inputId.value = '';
+        } else {
+          modalTitle.innerText = 'Edit Langganan';
+        }
+      }
+
+      function closeModal() {
+        modalForm.classList.add('hidden');
+        subscriptionForm.reset();
+      }
+
+      // --- 6. OPERASI CRUD (Create, Read, Update, Delete) ---
+
+      // Simpan (Create & Update)
+      subscriptionForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const newSub = {
+          id: inputId.value ? parseInt(inputId.value) : Date.now(), // Gunakan ID lama jika edit, buat ID unik (timestamp) jika baru
+          name: inputName.value,
+          dept: inputDept.value,
+          date: inputDate.value,
+          cost: parseFloat(inputCost.value),
+          status: inputStatus.value,
+        };
+
+        if (inputId.value) {
+          // Proses Update
+          const index = subscriptions.findIndex((s) => s.id === parseInt(inputId.value));
+          if (index !== -1) subscriptions[index] = newSub;
+        } else {
+          // Proses Create Baru
+          subscriptions.push(newSub);
+        }
+
+        saveData();
+        updateDashboard();
+        renderTable();
+        closeModal();
+      });
+
+      // Edit
+      window.editSubscription = function (id) {
+        const sub = subscriptions.find((s) => s.id === id);
+        if (sub) {
+          inputId.value = sub.id;
+          inputName.value = sub.name;
+          inputDept.value = sub.dept;
+          inputDate.value = sub.date;
+          inputCost.value = sub.cost;
+          inputStatus.value = sub.status;
+          openModal(true);
+        }
+      };
+
+      // Hapus
+      window.deleteSubscription = function (id) {
+        if (confirm('Apakah Anda yakin ingin menghapus langganan ini?')) {
+          subscriptions = subscriptions.filter((sub) => sub.id !== id);
+          saveData();
+          updateDashboard();
+          renderTable();
+        }
+      };
+
+      // --- 7. EVENT LISTENER LAINNYA ---
+      btnAdd.addEventListener('click', () => openModal(false));
+      btnCancel.addEventListener('click', closeModal);
+
+      // --- FITUR BONUS: EXPORT CSV ---
+      btnExport.addEventListener('click', function () {
+        if (subscriptions.length === 0) return;
+
+        // Header CSV
+        let csvContent = 'data:text/csv;charset=utf-8,';
+        csvContent += 'ID,Nama Aplikasi,Departemen,Tanggal Perpanjangan,Biaya/Bulan,Status\n';
+
+        // Isi Data CSV
+        subscriptions.forEach((sub) => {
+          // Gunakan tanda kutip agar nama/dept yang mengandung koma tidak merusak format CSV
+          const name = `"${sub.name}"`;
+          const dept = `"${sub.dept}"`;
+          const row = [sub.id, name, dept, sub.date, sub.cost, sub.status].join(',');
+          csvContent += row + '\n';
+        });
+
+        // Proses Download
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', 'Data_Langganan.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+
+      // Tutup modal jika area abu-abu di luar kotak diklik
+      modalForm.addEventListener('click', function (e) {
+        if (e.target === modalForm) {
+          closeModal();
+        }
+      });
+
+      // Fitur Pencarian (Search)
+      searchInput.addEventListener('input', function (e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredData = subscriptions.filter((sub) => sub.name.toLowerCase().includes(searchTerm) || sub.dept.toLowerCase().includes(searchTerm));
+        renderTable(filteredData);
+      });
+
+      // --- JALANKAN SAAT HALAMAN PERTAMA KALI DIMUAT ---
+      checkExpiringSubscriptions(); // Cek status tanggal terlebih dahulu
+      updateDashboard();
+      renderTable();
+    </script>
+  </body>
+</html>
